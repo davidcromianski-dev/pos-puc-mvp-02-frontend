@@ -1,23 +1,30 @@
 "use client";
 
-import { useAuth } from "../../features/auth/hooks";
+import { useAuthContext } from "../../contexts/AuthContext";
 import { useCurrentPokemon, useMyPokemons } from "../../features/pokemon/hooks";
-import { Button } from "../../components/ui/button";
-import { IconButton } from "../../components/ui/icon-button";
+import { useSelectPokemon } from "../../features/user/hooks";
+import { AuthGuard } from "../../components/AuthGuard";
+import { Header } from "../../components/Header";
+import { PokemonListSkeleton } from "../../components/PokemonListSkeleton";
 import { ClientOnly } from "../../lib/client-only";
-import {
-  LogOut,
-  User,
-  RotateCcw,
-} from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
-import { useMutation } from "@apollo/client/react";
-import { SELECT_POKEMON } from "../../graphql/domains/user/mutations";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Pokemon } from "../../graphql/domains/pokemon/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "../../components/ui/alert-dialog";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
 
 function DashboardContent() {
-  const { user, logout, isLoading } = useAuth();
+  const { user } = useAuthContext();
   const {
     pokemonName,
     pokemonNickname,
@@ -25,85 +32,98 @@ function DashboardContent() {
     pokemonCrieUrl,
     pokemonLevel,
     currentPokemon,
+    pokemonTypes,
+    pokemonHp,
+    pokemonExperience,
+    pokemonEnergy,
+    pokemonHappiness,
+    pokemonHunger,
+    pokemonCleanliness,
     refetch: refetchCurrentPokemon
   } = useCurrentPokemon();
-  const { pokemons, isLoading: pokemonsLoading } = useMyPokemons();
-  const [showConfirmation, setShowConfirmation] = useState<string | null>(null);
+  const { myPokemons, isLoading: pokemonsLoading } = useMyPokemons();
+  const {
+    showConfirmation,
+    selectingPokemon,
+    handlePokemonClick,
+    confirmPokemonSelection,
+    cancelSelection
+  } = useSelectPokemon();
+  const [currentRegionPokemons, setCurrentRegionPokemons] = useState<Pokemon[]>([]);
+  const [showPokemonSkeleton, setShowPokemonSkeleton] = useState(true);
 
-  const [selectPokemonMutation, { loading: selectingPokemon }] = useMutation(SELECT_POKEMON, {
-    onCompleted: () => {
-      refetchCurrentPokemon();
-      setShowConfirmation(null);
-    },
-    onError: (error) => {
-      console.error("Error selecting Pokemon:", error);
-      setShowConfirmation(null);
+  useEffect(() => {
+    if (myPokemons?.length > 0) {
+      const filteredRegion = myPokemons.find((data) => data.region === user?.currentRegion);
+      if (filteredRegion?.pokemon) {
+        setTimeout(() => {
+          setCurrentRegionPokemons(filteredRegion?.pokemon);
+          setShowPokemonSkeleton(false);
+        }, 1500);
+      }
+    } else if (!pokemonsLoading) {
+      setShowPokemonSkeleton(false);
     }
-  });
+  }, [myPokemons, user, pokemonsLoading]);
 
-  const handlePokemonClick = (pokemonId: string) => {
-    if (currentPokemon?.pokemonId === pokemonId) {
-      return;
-    }
-    setShowConfirmation(pokemonId);
+  const handlePokemonSelection = (pokemonId: string) => {
+    handlePokemonClick(pokemonId, currentPokemon?.id);
   };
 
-  const confirmPokemonSelection = async (pokemonId: string) => {
-    try {
-      await selectPokemonMutation({
-        variables: { pokemonId }
-      });
-    } catch (error) {
-      console.error("Failed to select Pokemon:", error);
-    }
+  const handleConfirmSelection = async (pokemonId: string) => {
+    await confirmPokemonSelection(pokemonId, refetchCurrentPokemon);
   };
-
-  if (isLoading || pokemonsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex">
       <div className="max-w-4xl mx-auto flex-1 flex flex-col">
-        <div className="flex justify-between items-center mb-8">
-          <Link href="/user">
-            <IconButton icon={<User className="h-4 w-4" />} variant="ghost" className="p-4 bg-gray-300 rounded-full" />
-          </Link>
-
-          <div className="flex items-center gap-2">
-            <Button onClick={logout} variant="outline" className="flex items-center gap-2">
-              <LogOut className="h-4 w-4" />
-              Logout
-            </Button>
-          </div>
-        </div>
+        <Header showDashboardButton={false} />
 
         <div className="flex items-center justify-start flex-1 gap-6 flex-col pt-6">
           <div className="flex flex-col items-center justify-center">
             <p className="text-5xl font-bold capitalize mb-2">{pokemonName}</p>
             <p className="text-lg text-gray-500">{pokemonNickname}</p>
-            <p className="text-lg text-gray-500">Nível {pokemonLevel}</p>
+            <div className="flex gap-2 flex-wrap justify-center items-center pt-4 ">
+              {pokemonTypes.map((type) => (
+                <Badge key={type.name} variant="outline">{type.name}</Badge>
+              ))}
+              <Badge variant="default">Nível {pokemonLevel}</Badge>
+              <Badge variant="secondary">HP {pokemonHp}</Badge>
+              <Badge variant="secondary">Experiência {pokemonExperience}</Badge>
+              <Badge variant="secondary">Energia {pokemonEnergy}</Badge>
+              <Badge variant="secondary">Felicidade {pokemonHappiness}</Badge>
+              <Badge variant="secondary">Fome {pokemonHunger}</Badge>
+              <Badge variant="secondary">Limpeza {pokemonCleanliness}</Badge>
+            </div>
           </div>
 
-          <Image
-            src={pokemonSpriteUrl}
-            alt={pokemonName}
-            width={250}
-            height={250}
-            className="object-contain cursor-pointer"
-            style={{ filter: "drop-shadow(4px 4px 0px #222)" }}
-            onClick={() => {
-              const crie = new Audio(pokemonCrieUrl);
-              crie.play();
-            }}
-          />
+          <div className="flex justify-center items-center w-full h-full">
+            {pokemonSpriteUrl && (
+              <div className="relative flex flex-col items-center justify-between h-full w-full">
+                <Image
+                  src={pokemonSpriteUrl}
+                  alt={pokemonName}
+                  width={250}
+                  height={250}
+                  className="object-contain cursor-pointer"
+                  style={{ width: "250px", height: "250px" }}
+                  onClick={() => {
+                    const crie = new Audio(pokemonCrieUrl);
+                    crie.play();
+                  }}
+                />
+                <div className="flex items-center justify-center">
+                  <Button variant="destructive">
+                    Abandonar
+                  </Button>
+                  <Button variant="secondary">
+                    Capturar novo
+                  </Button>
+                </div>
+              </div>
+
+            )}
+          </div>
 
           <div className="mt-10">
             <div className="text-center mb-4">
@@ -115,16 +135,18 @@ function DashboardContent() {
               </p>
             </div>
 
-            {pokemons.length > 0 ? (
+            {showPokemonSkeleton ? (
+              <PokemonListSkeleton />
+            ) : currentRegionPokemons.length > 0 ? (
               <div className="flex flex-wrap justify-center gap-4">
-                {pokemons.map((pokemon) => (
+                {currentRegionPokemons.map((pokemon) => (
                   <div
-                    key={pokemon.pokemonId}
-                    className={`relative w-20 h-20 rounded-full border-4 cursor-pointer transition-all duration-200 hover:scale-110 ${currentPokemon?.pokemonId === pokemon.pokemonId
-                        ? 'border-yellow-500 bg-yellow-100 shadow-lg'
-                        : 'border-gray-300 bg-white hover:border-blue-400 hover:shadow-md'
+                    key={pokemon.id}
+                    className={`relative w-15 h-15 rounded-full border-4 cursor-pointer transition-all duration-200 hover:scale-110 ${currentPokemon?.id === pokemon.id
+                      ? 'border-yellow-500 bg-yellow-100 shadow-lg'
+                      : 'border-gray-300 bg-white hover:border-blue-400 hover:shadow-md'
                       }`}
-                    onClick={() => handlePokemonClick(pokemon.pokemonId)}
+                    onClick={() => handlePokemonSelection(pokemon.id)}
                   >
                     <Image
                       src={pokemon.spriteUrl}
@@ -133,7 +155,7 @@ function DashboardContent() {
                       height={50}
                       className="w-full h-full object-contain p-2"
                     />
-                    {currentPokemon?.pokemonId === pokemon.pokemonId && (
+                    {currentPokemon?.id === pokemon.id && (
                       <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs font-bold">★</span>
                       </div>
@@ -149,48 +171,35 @@ function DashboardContent() {
           </div>
         </div>
 
-
-
-        {/* Confirmation Modal */}
-        {showConfirmation && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-md mx-4">
-              <div className="text-center">
-                <RotateCcw className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Trocar Pokémon Atual?</h3>
-                <p className="text-gray-600 mb-6">
-                  Tem certeza que deseja trocar seu Pokémon atual?
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowConfirmation(null)}
-                    disabled={selectingPokemon}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={() => confirmPokemonSelection(showConfirmation)}
-                    disabled={selectingPokemon}
-                    className="flex items-center gap-2"
-                  >
-                    {selectingPokemon ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Trocando...
-                      </>
-                    ) : (
-                      <>
-                        <RotateCcw className="h-4 w-4" />
-                        Confirmar
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <AlertDialog open={!!showConfirmation} onOpenChange={cancelSelection}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Trocar Pokémon Atual?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja trocar seu Pokémon atual?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={selectingPokemon}>
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => showConfirmation && handleConfirmSelection(showConfirmation)}
+                disabled={selectingPokemon}
+                className="flex items-center gap-2"
+              >
+                {selectingPokemon ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Trocando...
+                  </>
+                ) : (
+                  "Confirmar"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div >
   );
@@ -198,15 +207,17 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <ClientOnly fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
+    <AuthGuard>
+      <ClientOnly fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Carregando...</p>
+          </div>
         </div>
-      </div>
-    }>
-      <DashboardContent />
-    </ClientOnly>
+      }>
+        <DashboardContent />
+      </ClientOnly>
+    </AuthGuard>
   );
 }

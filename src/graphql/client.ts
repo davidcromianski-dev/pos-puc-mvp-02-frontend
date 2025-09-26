@@ -1,5 +1,6 @@
-import { ApolloClient, HttpLink, InMemoryCache } from "@apollo/client";
+import { ApolloClient, HttpLink, InMemoryCache, from } from "@apollo/client";
 import { SetContextLink } from "@apollo/client/link/context";
+import { onError } from "@apollo/client/link/error";
 
 const httpLink = new HttpLink({
   uri: process.env.NEXT_PUBLIC_GRAPHQL_URL,
@@ -37,8 +38,38 @@ const authLink = new SetContextLink(({ headers }) => {
   };
 });
 
+// Error link to handle authentication errors
+const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
+  if (graphQLErrors) {
+    graphQLErrors.forEach(({ message, locations, path }) => {
+      console.error(
+        `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
+      );
+      
+      // Check if the error is authentication related
+      if (message.includes("Authentication required") || message.includes("Unauthorized")) {
+        // Dispatch a custom event to trigger the auth error dialog
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("auth-error"));
+        }
+      }
+    });
+  }
+
+  if (networkError) {
+    console.error(`[Network error]: ${networkError}`);
+    
+    // Check if the network error is authentication related
+    if (networkError.message.includes("401") || networkError.message.includes("Unauthorized")) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("auth-error"));
+      }
+    }
+  }
+});
+
 const client = new ApolloClient({
-  link: authLink.concat(httpLink),
+  link: from([errorLink, authLink, httpLink]),
   cache: new InMemoryCache(),
 });
 

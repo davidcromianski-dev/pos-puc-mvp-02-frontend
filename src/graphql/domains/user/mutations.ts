@@ -1,42 +1,57 @@
 import { gql } from "@apollo/client";
 
 export const CHOOSE_STARTER = gql`
-mutation ChooseStarter($pokemonId: String!, $region: String!) {
-  chooseStarter(starterData: {pokemonId: $pokemonId, region: $region}) {
-    id
-    username
-    regions {
-      pokemonIds
-      starterPokemonId
+mutation ChooseStarter($region: String!, $pokemonId: Int!) {
+    chooseStarter(starterData: { region: $region, pokemonId: $pokemonId }) {
+        id
+        username
+        email
+        role
+        active
+        deactivationDate
+        currentRegion
+        currentPokemon
+        level
+        experience
+        createdAt
+        updatedAt
+        regions {
+            regionName
+            pokemonIds
+            pokemonCount
+            starterPokemonId
+            unlocked
+            unlockedAt
+        }
     }
-    currentRegion
-  }
 }
+
 `;
 
 export const SELECT_POKEMON = gql`
-mutation SelectPokemon($pokemonId: String!) {
-  selectPokemon(pokemonData: {pokemonId: $pokemonId}) {
-    active
-    createdAt
-    currentPokemon
-    currentRegion
-    deactivationDate
-    email
-    experience
-    id
-    level
-    role
-    updatedAt
-    username
-    regions {
-      pokemonCount
-      pokemonIds
-      regionName
-      starterPokemonId
-      unlocked
-      unlockedAt
+mutation SelectPokemon($id: String!) {
+    selectPokemon(pokemonData: { id: $id }) {
+        id
+        username
+        email
+        role
+        active
+        deactivationDate
+        currentRegion
+        currentPokemon
+        level
+        experience
+        createdAt
+        updatedAt
+        regions {
+            regionName
+            pokemonIds
+            pokemonCount
+            starterPokemonId
+            unlocked
+            unlockedAt
+        }
     }
-  }
 }
+
 `;

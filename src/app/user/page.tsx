@@ -1,13 +1,12 @@
 "use client";
 
-import { useAuth } from "../../features/auth/hooks";
+import { useAuthContext } from "../../contexts/AuthContext";
 import { useCurrentPokemon } from "../../features/pokemon/hooks";
-import { Button } from "../../components/ui/button";
-import { IconButton } from "../../components/ui/icon-button";
+import { AuthGuard } from "../../components/AuthGuard";
+import { Header } from "../../components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { ClientOnly } from "../../lib/client-only";
 import {
-    LogOut,
     Cat,
     User,
     Mail,
@@ -18,11 +17,10 @@ import {
     Unlock,
     Lock,
 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 
 function UserContent() {
-    const { user, logout, isLoading } = useAuth();
+    const { user, isLoading } = useAuthContext();
     const { 
         currentPokemon, 
         pokemonName, 
@@ -51,18 +49,7 @@ function UserContent() {
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
-                    <Link href="/dashboard">
-                        <IconButton icon={<Cat className="h-4 w-4" />} variant="ghost" className="p-4 bg-gray-300 rounded-full" />
-                    </Link>
-
-                    <div className="flex items-center gap-2">
-                        <Button onClick={logout} variant="outline" className="flex items-center gap-2">
-                            <LogOut className="h-4 w-4" />
-                            Logout
-                        </Button>
-                    </div>
-                </div>
+                <Header showUserButton={false} />
 
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     <Card>
@@ -190,7 +177,7 @@ function UserContent() {
                                 Informações da Conta
                             </CardTitle>
                             <CardDescription>
-                                Detalhes da conta
+                                Veja abaixo suas informações da conta
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -208,15 +195,17 @@ function UserContent() {
 
 export default function UserPage() {
     return (
-        <ClientOnly fallback={
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Carregando...</p>
+        <AuthGuard>
+            <ClientOnly fallback={
+                <div className="min-h-screen flex items-center justify-center">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
+                        <p className="mt-4 text-gray-600">Carregando...</p>
+                    </div>
                 </div>
-            </div>
-        }>
-            <UserContent />
-        </ClientOnly>
+            }>
+                <UserContent />
+            </ClientOnly>
+        </AuthGuard>
     );
 }

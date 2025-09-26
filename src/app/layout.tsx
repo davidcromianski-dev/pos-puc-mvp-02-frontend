@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ApolloWrapper } from "../lib/apollo-wrapper";
+import { AuthErrorHandler } from "../components/AuthErrorHandler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,6 +32,7 @@ export default function RootLayout({
       >
         <ApolloWrapper>
           {children}
+          <AuthErrorHandler />
         </ApolloWrapper>
       </body>
     </html>

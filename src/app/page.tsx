@@ -1,12 +1,12 @@
 "use client";
 
-import { useAuth } from "../features/auth/hooks";
+import { useAuthContext } from "../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { ClientOnly } from "../lib/client-only";
 
 function HomeContent() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuthContext();
   const router = useRouter();
 
   useEffect(() => {

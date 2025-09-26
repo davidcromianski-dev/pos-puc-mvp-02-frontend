@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "./hooks";
+import { useAuthContext } from "../../contexts/AuthContext";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -19,7 +19,7 @@ export default function AuthForm() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { login, register, loginLoading, registerLoading, loginError, registerError } = useAuth();
+  const { login, register, loginLoading, registerLoading, loginError, registerError } = useAuthContext();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -90,14 +90,20 @@ export default function AuthForm() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md relative">
-        <Image 
-          priority 
-          src="/assets/images/pokemon/pikachu.png" 
-          alt="Pikachu" 
-          className="absolute top-[-52%] left-[-10%]" 
-          width={200} 
-          height={200}
-          style={{ width: "auto", height: "auto", filter: "drop-shadow(-6px 10px 0px #cecece)" }}
+        <Image
+          priority
+          src="/assets/images/pokemon/pikachu.png"
+          alt="Pikachu"
+          className="absolute margin-auto top-0"
+          width={500}
+          height={500}
+          style={{ 
+            width: "auto", 
+            height: "auto", 
+            filter: "drop-shadow(-6px 10px 0px #cecece)",
+            top: "-50%",
+            left: "-10%",
+          }}
         />
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">

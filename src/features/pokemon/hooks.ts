@@ -1,14 +1,10 @@
-import { useQuery } from "@apollo/client/react";
+import { useQueryMediator } from "../../hooks/useQueryMediator";
 import { MY_CURRENT_POKEMON, MY_POKEMONS } from "../../graphql/domains/pokemon/queries";
 import type { MyCurrentPokemonData, MyPokemonsData, Pokemon } from "../../graphql/domains/pokemon/types";
 
 export const useCurrentPokemon = () => {
-  const { data, loading, error, refetch } = useQuery<MyCurrentPokemonData>(MY_CURRENT_POKEMON, {
-    errorPolicy: "all",
+  const { data, loading, error, refetch } = useQueryMediator<MyCurrentPokemonData>(MY_CURRENT_POKEMON, {
     skip: typeof window === "undefined",
-    onError: (error) => {
-      console.log("Current Pokemon query error:", error);
-    }
   });
 
   const currentPokemon = data?.myCurrentPokemon as Pokemon;
@@ -36,17 +32,14 @@ export const useCurrentPokemon = () => {
 };
 
 export const useMyPokemons = () => {
-  const { data, loading, error, refetch } = useQuery<MyPokemonsData>(MY_POKEMONS, {
-    errorPolicy: "all",
+  const { data, loading, error, refetch } = useQueryMediator<MyPokemonsData>(MY_POKEMONS, {
     skip: typeof window === "undefined",
-    onError: (error) => {
-      console.log("My Pokemons query error:", error);
-    }
   });
+  const totalPokemons = data?.myPokemons.reduce((acc, curr) => acc + curr.count, 0);
 
   return {
-    pokemons: data?.myPokemons || [],
-    totalPokemons: data?.myPokemons?.length || 0,
+    myPokemons: data?.myPokemons || [],
+    totalPokemons: totalPokemons || 0,
     isLoading: loading,
     error,
     refetch

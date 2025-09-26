@@ -1,38 +1,20 @@
-import { useMutation, useQuery } from "@apollo/client/react";
+import { useMutationMediator } from "../../hooks/useMutationMediator";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { LOGIN, REGISTER } from "../../graphql/domains/auth/mutations";
-import { ME } from "../../graphql/domains/user/queries";
 import type { 
   LoginVariables, 
   RegisterVariables, 
   LoginData, 
   RegisterData 
 } from "../../graphql/domains/auth/types";
-import type { MeData } from "../../graphql/domains/user/types";
+import type { User } from "../../graphql/domains/user/types";
 
 export const useAuth = () => {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  const { data: meData, loading: meLoading, error: meError, refetch } = useQuery<MeData>(ME, {
-    errorPolicy: "all",
-    skip: typeof window === "undefined",
-    onCompleted: (data) => {
-      if (data?.me) {
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
-      }
-      setIsLoading(false);
-    },
-    onError: (error) => {
-      console.log("ME query error:", error);
-      setIsAuthenticated(false);
-      setIsLoading(false);
-    }
-  });
+  const [user, setUser] = useState<User | null>(null);
 
   const setToken = (token: string) => {
     localStorage.setItem("token", token);
@@ -46,55 +28,29 @@ export const useAuth = () => {
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
   };
 
-  const [loginMutation, { loading: loginLoading, error: loginError }] = useMutation<
+  const [loginMutation, { loading: loginLoading, error: loginError }] = useMutationMediator<
     LoginData,
     LoginVariables
-  >(LOGIN, {
-    onCompleted: async (data) => {
-      if (data?.login?.accessToken) {
-        setToken(data.login.accessToken);
-        setIsAuthenticated(true);
-        setIsLoading(false);
-        try {
-          await refetch();
-        } catch (error) {
-          console.error("Error refetching user data:", error);
-        }
-        router.push("/dashboard");
-      }
-    },
-    onError: (error) => {
-      console.error("Login error:", error);
-    }
-  });
+  >(LOGIN);
 
-  const [registerMutation, { loading: registerLoading, error: registerError }] = useMutation<
+  const [registerMutation, { loading: registerLoading, error: registerError }] = useMutationMediator<
     RegisterData,
     RegisterVariables
-  >(REGISTER, {
-    onCompleted: async (data) => {
-      if (data?.register?.accessToken) {
-        setToken(data.register.accessToken);
-        setIsAuthenticated(true);
-        setIsLoading(false);
-        try {
-          await refetch();
-        } catch (error) {
-          console.error("Error refetching user data:", error);
-        }
-        router.push("/dashboard"); // Redirect directly to dashboard
-      }
-    },
-    onError: (error) => {
-      console.error("Registration error:", error);
-    }
-  });
+  >(REGISTER);
 
   const login = async (username: string, password: string) => {
     try {
-      await loginMutation({
+      const result = await loginMutation({
         variables: { username, password }
       });
+      
+      if (result.data?.login?.accessToken && result.data?.login?.user) {
+        setToken(result.data.login.accessToken);
+        setUser(result.data.login.user);
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        router.push("/dashboard");
+      }
     } catch (error) {
       console.error("Login failed:", error);
     }
@@ -102,9 +58,17 @@ export const useAuth = () => {
 
   const register = async (username: string, password: string, email: string) => {
     try {
-      await registerMutation({
+      const result = await registerMutation({
         variables: { username, password, email }
       });
+      
+      if (result.data?.register?.accessToken && result.data?.register?.user) {
+        setToken(result.data.register.accessToken);
+        setUser(result.data.register.user);
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        router.push("/dashboard");
+      }
     } catch (error) {
       console.error("Registration failed:", error);
     }
@@ -112,29 +76,15 @@ export const useAuth = () => {
 
   const logout = () => {
     removeToken();
+    setUser(null);
     setIsAuthenticated(false);
     router.push("/login");
   };
 
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      setIsLoading(false);
-      return;
-    }
-    
-    const token = localStorage.getItem("token") || 
-      document.cookie.split(';').find(c => c.trim().startsWith('token='))?.split('=')[1];
-
-    if (token && !meData) {
-      refetch();
-    }
-    setIsLoading(false);
-  }, [meData, refetch]);
-
   return {
-    user: meData?.me,
+    user,
     isAuthenticated,
-    isLoading: isLoading || meLoading,
+    isLoading: isLoading,
     login,
     register,
     logout,
@@ -142,6 +92,5 @@ export const useAuth = () => {
     registerLoading,
     loginError,
     registerError,
-    meError
   };
 };

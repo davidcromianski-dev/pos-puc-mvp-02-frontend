@@ -7,6 +7,25 @@ mutation Login(
 ) {
   login(loginData: {username: $username, password: $password}) {
     accessToken
+    user {
+      id
+      username
+      email
+      level
+      experience
+      currentRegion
+      currentPokemon
+      createdAt
+      updatedAt
+      regions {
+        regionName
+        pokemonIds
+        starterPokemonId
+        pokemonCount
+        unlocked
+        unlockedAt
+      }
+    }
   }
 }
 `;
@@ -21,6 +40,25 @@ mutation Register(
     userData: {username: $username, password: $password, email: $email}
   ) {
     accessToken
+    user {
+      id
+      username
+      email
+      level
+      experience
+      currentRegion
+      currentPokemon
+      createdAt
+      updatedAt
+      regions {
+        regionName
+        pokemonIds
+        starterPokemonId
+        pokemonCount
+        unlocked
+        unlockedAt
+      }
+    }
   }
 }
 `;
