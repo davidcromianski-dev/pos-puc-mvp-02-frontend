@@ -30,9 +30,3 @@ mutation CapturePokemon($pokemonID: Int!) {
   }
 }
 `;
-
-export const RELEASE_POKEMON = gql`
-mutation ReleasePokemon($pokemonID: String!) {
-  releasePokemon(releaseData: {pokemonId: $pokemonID})
-}
-`;

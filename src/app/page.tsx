@@ -10,13 +10,14 @@ function HomeContent() {
   const router = useRouter();
 
   useEffect(() => {
-    
+    //@todo Caso o usuario nao tenha um pokemon inicial na regiao atual, redireciona para a pagina de selecao de pokemon inicial.
+
     const timeout = setTimeout(() => {
       if (user) {
         router.push("/dashboard");
         return;
       }
-      
+
       if (!isLoading && !isAuthenticated) {
         router.push("/login");
       }

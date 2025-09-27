@@ -88,23 +88,22 @@ export default function AuthForm() {
   const authError = loginError || registerError;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex flex-col items-center justify-start bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <Image
+        priority
+        src="/assets/images/pokemon/pikachu.png"
+        alt="Pikachu"
+        className="margin-auto"
+        width={500}
+        height={500}
+        style={{
+          width: "auto",
+          height: "auto",
+          filter: "drop-shadow(-6px 10px 0px #cecece)",
+          marginBottom: "-1rem",
+        }}
+      />
       <Card className="w-full max-w-md relative">
-        <Image
-          priority
-          src="/assets/images/pokemon/pikachu.png"
-          alt="Pikachu"
-          className="absolute margin-auto top-0"
-          width={500}
-          height={500}
-          style={{ 
-            width: "auto", 
-            height: "auto", 
-            filter: "drop-shadow(-6px 10px 0px #cecece)",
-            top: "-50%",
-            left: "-10%",
-          }}
-        />
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">
             POKÉMON MVP

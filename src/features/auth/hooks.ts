@@ -1,7 +1,9 @@
 import { useMutationMediator } from "../../hooks/useMutationMediator";
+import { useQuery } from "@apollo/client/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LOGIN, REGISTER } from "../../graphql/domains/auth/mutations";
+import { ME } from "../../graphql/domains/user/queries";
 import type { 
   LoginVariables, 
   RegisterVariables, 
@@ -9,12 +11,25 @@ import type {
   RegisterData 
 } from "../../graphql/domains/auth/types";
 import type { User } from "../../graphql/domains/user/types";
+import type { MeData } from "../../graphql/domains/user/types";
 
 export const useAuth = () => {
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
+
+  const { data } = useQuery<MeData>(ME, {
+    skip: typeof window === "undefined",
+  });
+
+  useEffect(() => {
+    if (user === null && data?.me) {
+      setUser(data.me);
+      setIsAuthenticated(true);
+      setIsLoading(false);
+    }
+  }, [user, setUser, data]);
 
   const setToken = (token: string) => {
     localStorage.setItem("token", token);

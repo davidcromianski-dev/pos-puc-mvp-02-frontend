@@ -1,27 +1,25 @@
 "use client";
 
 import { useAuthContext } from "../../contexts/AuthContext";
-import { useCurrentPokemon, useMyPokemons } from "../../features/pokemon/hooks";
-import { useSelectPokemon } from "../../features/user/hooks";
+import {
+  useCurrentPokemon,
+  useMyPokemons,
+  useCapturePokemon,
+  useRandomPokemon,
+} from "../../features/pokemon/hooks";
+import { useSelectPokemon, useReleasePokemon } from "../../features/user/hooks";
 import { AuthGuard } from "../../components/AuthGuard";
 import { Header } from "../../components/Header";
-import { PokemonListSkeleton } from "../../components/PokemonListSkeleton";
 import { ClientOnly } from "../../lib/client-only";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { Pokemon } from "../../graphql/domains/pokemon/types";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../../components/ui/alert-dialog";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
+import { Binoculars, DoorOpen } from "lucide-react";
+import { SelectPokemonDialog } from "./dialogs/SelectPokemonDialog";
+import { ReleasePokemonDialog } from "./dialogs/ReleasePokemonDialog";
+import { CapturePokemonDialog } from "./dialogs/CapturePokemonDialog";
 
 function DashboardContent() {
   const { user } = useAuthContext();
@@ -43,14 +41,28 @@ function DashboardContent() {
   } = useCurrentPokemon();
   const { myPokemons, isLoading: pokemonsLoading } = useMyPokemons();
   const {
-    showConfirmation,
+    showConfirmation: showSelectConfirmation,
     selectingPokemon,
-    handlePokemonClick,
+    handlePokemonSelection,
     confirmPokemonSelection,
     cancelSelection
   } = useSelectPokemon();
+  const {
+    showConfirmation: showReleaseConfirmation,
+    handleReleasePokemonClick,
+    cancelReleasePokemon,
+    confirmReleasePokemon,
+    releasingPokemon,
+  } = useReleasePokemon();
+  const {
+    capturePokemon,
+    isLoading: capturePokemonLoading,
+  } = useCapturePokemon();
+  const { getRandomPokemon } = useRandomPokemon();
+  const [randomPokemon, setRandomPokemon] = useState<RandomPokemon | null>(null);
+
   const [currentRegionPokemons, setCurrentRegionPokemons] = useState<Pokemon[]>([]);
-  const [showPokemonSkeleton, setShowPokemonSkeleton] = useState(true);
+  const [showCaptureDialog, setShowCaptureDialog] = useState(false);
 
   useEffect(() => {
     if (myPokemons?.length > 0) {
@@ -58,20 +70,46 @@ function DashboardContent() {
       if (filteredRegion?.pokemon) {
         setTimeout(() => {
           setCurrentRegionPokemons(filteredRegion?.pokemon);
-          setShowPokemonSkeleton(false);
-        }, 1500);
+        }, 500);
       }
-    } else if (!pokemonsLoading) {
-      setShowPokemonSkeleton(false);
     }
   }, [myPokemons, user, pokemonsLoading]);
 
-  const handlePokemonSelection = (pokemonId: string) => {
-    handlePokemonClick(pokemonId, currentPokemon?.id);
+  const handlePokemonSelectionClick = (pokemonId: string) => {
+    handlePokemonSelection(pokemonId, currentPokemon?.id);
   };
 
   const handleConfirmSelection = async (pokemonId: string) => {
     await confirmPokemonSelection(pokemonId, refetchCurrentPokemon);
+  };
+
+  const handlePokemonReleaseClick = async (pokemonId: string) => {
+    await handleReleasePokemonClick(pokemonId);
+  };
+
+  const handleConfirmReleasePokemon = async (pokemonId: string) => {
+    await confirmReleasePokemon(pokemonId, refetchCurrentPokemon);
+    setCurrentPokemon(null);
+  };
+
+  const handleCapturePokemon = async () => {
+    const pokemon = await getRandomPokemon();
+    setRandomPokemon(pokemon);
+    setShowCaptureDialog(true);
+  };
+
+  const handleConfirmCapture = async () => {
+    try {
+      await capturePokemon(randomPokemon?.pokemonId);
+      setShowCaptureDialog(false);
+      refetchCurrentPokemon();
+    } catch (error) {
+      console.error("Error capturing pokemon:", error);
+    }
+  };
+
+  const handleCancelCapture = () => {
+    setShowCaptureDialog(false);
   };
 
   return (
@@ -79,65 +117,90 @@ function DashboardContent() {
       <div className="max-w-4xl mx-auto flex-1 flex flex-col">
         <Header showDashboardButton={false} />
 
-        <div className="flex items-center justify-start flex-1 gap-6 flex-col pt-6">
-          <div className="flex flex-col items-center justify-center">
-            <p className="text-5xl font-bold capitalize mb-2">{pokemonName}</p>
-            <p className="text-lg text-gray-500">{pokemonNickname}</p>
-            <div className="flex gap-2 flex-wrap justify-center items-center pt-4 ">
-              {pokemonTypes.map((type) => (
-                <Badge key={type.name} variant="outline">{type.name}</Badge>
-              ))}
-              <Badge variant="default">Nível {pokemonLevel}</Badge>
-              <Badge variant="secondary">HP {pokemonHp}</Badge>
-              <Badge variant="secondary">Experiência {pokemonExperience}</Badge>
-              <Badge variant="secondary">Energia {pokemonEnergy}</Badge>
-              <Badge variant="secondary">Felicidade {pokemonHappiness}</Badge>
-              <Badge variant="secondary">Fome {pokemonHunger}</Badge>
-              <Badge variant="secondary">Limpeza {pokemonCleanliness}</Badge>
-            </div>
-          </div>
-
-          <div className="flex justify-center items-center w-full h-full">
-            {pokemonSpriteUrl && (
-              <div className="relative flex flex-col items-center justify-between h-full w-full">
-                <Image
-                  src={pokemonSpriteUrl}
-                  alt={pokemonName}
-                  width={250}
-                  height={250}
-                  className="object-contain cursor-pointer"
-                  style={{ width: "250px", height: "250px" }}
-                  onClick={() => {
-                    const crie = new Audio(pokemonCrieUrl);
-                    crie.play();
-                  }}
-                />
-                <div className="flex items-center justify-center">
-                  <Button variant="destructive">
-                    Abandonar
-                  </Button>
-                  <Button variant="secondary">
-                    Capturar novo
-                  </Button>
+        <div className="flex items-center justify-start flex-1 gap-4 flex-col pt-6">
+          {currentPokemon ? (
+            <>
+              <div className="flex flex-col items-center justify-center">
+                <p className="text-5xl font-bold capitalize mb-2">{pokemonName}</p>
+                <p className="text-lg text-gray-500">{pokemonNickname}</p>
+                <div className="flex gap-2 flex-wrap justify-center items-center pt-4 ">
+                  {pokemonTypes.map((type) => (
+                    <Badge key={type.name} variant="outline">{type.name}</Badge>
+                  ))}
+                  <Badge variant="default">Nível {pokemonLevel}</Badge>
+                  <Badge variant="secondary">HP {pokemonHp}</Badge>
+                  <Badge variant="secondary">Experiência {pokemonExperience}</Badge>
+                  <Badge variant="secondary">Energia {pokemonEnergy}</Badge>
+                  <Badge variant="secondary">Felicidade {pokemonHappiness}</Badge>
+                  <Badge variant="secondary">Fome {pokemonHunger}</Badge>
+                  <Badge variant="secondary">Limpeza {pokemonCleanliness}</Badge>
                 </div>
               </div>
 
+              <div className="flex justify-center items-center w-full h-full">
+                {pokemonSpriteUrl && (
+                  <Image
+                    src={pokemonSpriteUrl}
+                    alt={pokemonName}
+                    width={250}
+                    height={250}
+                    className="object-contain cursor-pointer"
+                    style={{ width: "250px", height: "250px" }}
+                    onClick={() => {
+                      const crie = new Audio(pokemonCrieUrl);
+                      crie.play();
+                    }}
+                  />
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <p className="mt-4 text-gray-600">Você não possui um Pókemon selecionado</p>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center justify-center flex-col gap-4 mt-8">
+            {currentPokemon && (
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 cursor-pointer capitalize border-red-200 text-red-500"
+                onClick={() => handlePokemonReleaseClick(currentPokemon?.id)}
+              >
+                <DoorOpen className="h-12 w-12" />
+                Abandonar {pokemonName}
+              </Button>
             )}
+
+            <Button
+              variant="outline"
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={handleCapturePokemon}
+            >
+              <Binoculars className="h-12 w-12" />
+              Capturar novo pokémon
+            </Button>
           </div>
 
-          <div className="mt-10">
-            <div className="text-center mb-4">
-              <h2 className="text-lg font-bold text-gray-900 mb-2">
-                Seus Pokémons - {user?.currentRegion?.toUpperCase()}
-              </h2>
-              <p className="text-gray-600 text-sm">
-                Clique em um Pokémon para trocá-lo como atual
-              </p>
+          {!currentRegionPokemons?.length ? (
+            <div className="flex items-center justify-center">
+              <div className="text-center">
+                <p className="mt-4 text-gray-600">Você não possui nenhum Pokémon nessa região</p>
+              </div>
             </div>
+          ) : (
+            <div className="mt-10">
+              <div className="text-center mb-4">
+                <h2 className="text-lg font-bold text-gray-900 mb-2">
+                  Seus Pokémons - {user?.currentRegion?.toUpperCase()}
+                </h2>
+                <p className="text-gray-600 text-sm">
+                  Clique em um Pokémon para trocá-lo como atual
+                </p>
+              </div>
 
-            {showPokemonSkeleton ? (
-              <PokemonListSkeleton />
-            ) : currentRegionPokemons.length > 0 ? (
               <div className="flex flex-wrap justify-center gap-4">
                 {currentRegionPokemons.map((pokemon) => (
                   <div
@@ -146,7 +209,7 @@ function DashboardContent() {
                       ? 'border-yellow-500 bg-yellow-100 shadow-lg'
                       : 'border-gray-300 bg-white hover:border-blue-400 hover:shadow-md'
                       }`}
-                    onClick={() => handlePokemonSelection(pokemon.id)}
+                    onClick={() => handlePokemonSelectionClick(pokemon.id)}
                   >
                     <Image
                       src={pokemon.spriteUrl}
@@ -163,43 +226,32 @@ function DashboardContent() {
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Você ainda não tem Pokémons nesta região.</p>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        <AlertDialog open={!!showConfirmation} onOpenChange={cancelSelection}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Trocar Pokémon Atual?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja trocar seu Pokémon atual?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={selectingPokemon}>
-                Cancelar
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => showConfirmation && handleConfirmSelection(showConfirmation)}
-                disabled={selectingPokemon}
-                className="flex items-center gap-2"
-              >
-                {selectingPokemon ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Trocando...
-                  </>
-                ) : (
-                  "Confirmar"
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <SelectPokemonDialog
+          showConfirmation={showSelectConfirmation}
+          selectingPokemon={selectingPokemon}
+          onCancel={cancelSelection}
+          onConfirm={handleConfirmSelection}
+        />
+
+        <ReleasePokemonDialog
+          showConfirmation={showReleaseConfirmation}
+          releasingPokemon={releasingPokemon}
+          onCancel={cancelReleasePokemon}
+          onConfirm={handleConfirmReleasePokemon}
+        />
+
+        <CapturePokemonDialog
+          isOpen={showCaptureDialog}
+          onClose={handleCancelCapture}
+          onConfirm={handleConfirmCapture}
+          isCapturing={capturePokemonLoading}
+          randomPokemon={randomPokemon}
+        />
+
       </div>
     </div >
   );

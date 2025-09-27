@@ -1,6 +1,16 @@
 import { useQueryMediator } from "../../hooks/useQueryMediator";
+import { useMutationMediator } from "../../hooks/useMutationMediator";
 import { MY_CURRENT_POKEMON, MY_POKEMONS } from "../../graphql/domains/pokemon/queries";
-import type { MyCurrentPokemonData, MyPokemonsData, Pokemon } from "../../graphql/domains/pokemon/types";
+import { CAPTURE_POKEMON } from "../../graphql/domains/pokedex/mutations";
+import { RANDOM_POKEMON, STARTER_POKEMONS } from "../../graphql/domains/pokedex/queries";
+import type {
+  MyCurrentPokemonData,
+  MyPokemonsData,
+  Pokemon,
+  CapturePokemonData,
+  RandomPokemonData,
+  StarterPokemonsData,
+} from "../../graphql/domains/pokemon/types";
 
 export const useCurrentPokemon = () => {
   const { data, loading, error, refetch } = useQueryMediator<MyCurrentPokemonData>(MY_CURRENT_POKEMON, {
@@ -40,6 +50,56 @@ export const useMyPokemons = () => {
   return {
     myPokemons: data?.myPokemons || [],
     totalPokemons: totalPokemons || 0,
+    isLoading: loading,
+    error,
+    refetch
+  };
+};
+
+export const useRandomPokemon = () => {
+  const { data, loading, error, refetch } = useQueryMediator<RandomPokemonData>(RANDOM_POKEMON, {
+    skip: typeof window === "undefined",
+  });
+
+  async function getRandomPokemon() {
+    await refetch();
+    return data?.randomPokemon || null;
+  }
+
+  return {
+    getRandomPokemon,
+    isLoading: loading,
+    error,
+    refetch
+  };
+};
+
+export const useStarterPokemons = () => {
+  const { data, loading, error, refetch } = useQueryMediator<StarterPokemonsData>(STARTER_POKEMONS, {
+    skip: typeof window === "undefined",
+  });
+
+  return {
+    starterPokemons: data?.starterPokemons || null,
+    isLoading: loading,
+    error,
+    refetch
+  };
+};
+
+export const useCapturePokemon = () => {
+  const [capturePokemonMutation, { loading, error, refetch }] = useMutationMediator<CapturePokemonData>(CAPTURE_POKEMON, {
+    skip: typeof window === "undefined",
+  });
+
+  const capturePokemon = async (pokemonID: number) => {
+    return await capturePokemonMutation({
+      variables: { pokemonID }
+    });
+  };
+
+  return {
+    capturePokemon,
     isLoading: loading,
     error,
     refetch

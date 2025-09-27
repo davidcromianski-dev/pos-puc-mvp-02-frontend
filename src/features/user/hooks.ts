@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useMutationMediator } from "../../hooks/useMutationMediator";
 import { SELECT_POKEMON } from "../../graphql/domains/user/mutations";
+import { RELEASE_POKEMON } from "../../graphql/domains/user/mutations";
 
 export const useSelectPokemon = () => {
   const [showConfirmation, setShowConfirmation] = useState<string | null>(null);
-  
+
   const [selectPokemonMutation, { loading: selectingPokemon }] = useMutationMediator(SELECT_POKEMON);
 
-  const handlePokemonClick = (id: string, currentPokemonId?: string) => {
+  const handlePokemonSelection = (id: string, currentPokemonId?: string) => {
     if (currentPokemonId === id) {
       return;
     }
@@ -36,8 +37,43 @@ export const useSelectPokemon = () => {
   return {
     showConfirmation,
     selectingPokemon,
-    handlePokemonClick,
+    handlePokemonSelection,
     confirmPokemonSelection,
     cancelSelection,
   };
 };
+
+export const useReleasePokemon = () => {
+  const [showConfirmation, setShowConfirmation] = useState<string | null>(null);
+  const [abandonPokemonMutation] = useMutationMediator(RELEASE_POKEMON);
+
+  const handleReleasePokemonClick = (id: string) => {
+    setShowConfirmation(id);
+  };
+
+  const confirmReleasePokemon = async (id: string, onSuccess?: () => void) => {
+    try {
+      await abandonPokemonMutation({
+        variables: { id }
+      });
+      setShowConfirmation(null);
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error("Failed to release Pokemon:", error);
+      setShowConfirmation(null);
+    }
+  }
+
+  const cancelReleasePokemon = () => {
+    setShowConfirmation(null);
+  }
+
+  return {
+    showConfirmation,
+    handleReleasePokemonClick,
+    confirmReleasePokemon,
+    cancelReleasePokemon,
+  }
+}

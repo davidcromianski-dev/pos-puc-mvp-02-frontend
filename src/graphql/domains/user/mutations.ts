@@ -53,5 +53,10 @@ mutation SelectPokemon($id: String!) {
         }
     }
 }
+`;
 
+export const RELEASE_POKEMON = gql`
+mutation ReleasePokemon($id: String!) {
+  releasePokemon(releaseData: {id: $id})
+}
 `;
