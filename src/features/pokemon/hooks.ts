@@ -4,22 +4,18 @@ import { MY_CURRENT_POKEMON, MY_POKEMONS } from "../../graphql/domains/pokemon/q
 import { CAPTURE_POKEMON } from "../../graphql/domains/pokedex/mutations";
 import { RANDOM_POKEMON, STARTER_POKEMONS } from "../../graphql/domains/pokedex/queries";
 import type {
-  MyCurrentPokemonData,
-  MyPokemonsData,
   Pokemon,
   CapturePokemonData,
-  RandomPokemonData,
-  StarterPokemonsData,
 } from "../../graphql/domains/pokemon/types";
 
 export const useCurrentPokemon = () => {
-  const { data, loading, error, refetch } = useQueryMediator<MyCurrentPokemonData>(MY_CURRENT_POKEMON, {
+  const { data, loading, error, refetch } = useQueryMediator(MY_CURRENT_POKEMON, {
     skip: typeof window === "undefined",
     fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
   });
 
-  const currentPokemon = data?.myCurrentPokemon as Pokemon;
+  const currentPokemon = (data as { myCurrentPokemon?: Pokemon })?.myCurrentPokemon;
 
   return {
     currentPokemon,
@@ -44,13 +40,15 @@ export const useCurrentPokemon = () => {
 };
 
 export const useMyPokemons = () => {
-  const { data, loading, error, refetch } = useQueryMediator<MyPokemonsData>(MY_POKEMONS, {
+  const { data, loading, error, refetch } = useQueryMediator(MY_POKEMONS, {
     skip: typeof window === "undefined",
     fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
   });
 
-  if (!data?.myPokemons) return {
+  const pokemonData = data as { myPokemons?: unknown[] };
+
+  if (!pokemonData?.myPokemons) return {
     myPokemons: [],
     totalPokemons: 0,
     isLoading: loading,
@@ -58,10 +56,13 @@ export const useMyPokemons = () => {
     refetch
   };
 
-  const totalPokemons = data?.myPokemons.reduce((acc, curr) => acc + curr.count, 0);
+  const totalPokemons = pokemonData.myPokemons.reduce((acc: number, curr: unknown) => {
+    const pokemon = curr as { count?: number };
+    return acc + (pokemon?.count || 0);
+  }, 0);
 
   return {
-    myPokemons: data?.myPokemons || [],
+    myPokemons: pokemonData.myPokemons || [],
     totalPokemons: totalPokemons || 0,
     isLoading: loading,
     error,
@@ -70,13 +71,14 @@ export const useMyPokemons = () => {
 };
 
 export const useRandomPokemon = () => {
-  const { data, loading, error, refetch } = useQueryMediator<RandomPokemonData>(RANDOM_POKEMON, {
+  const { data, loading, error, refetch } = useQueryMediator(RANDOM_POKEMON, {
     skip: typeof window === "undefined",
   });
 
   async function getRandomPokemon() {
     await refetch();
-    return data?.randomPokemon || null;
+    const randomData = data as { randomPokemon?: unknown };
+    return randomData?.randomPokemon || null;
   }
 
   return {
@@ -88,12 +90,14 @@ export const useRandomPokemon = () => {
 };
 
 export const useStarterPokemons = () => {
-  const { data, loading, error, refetch } = useQueryMediator<StarterPokemonsData>(STARTER_POKEMONS, {
+  const { data, loading, error, refetch } = useQueryMediator(STARTER_POKEMONS, {
     skip: typeof window === "undefined",
   });
 
+  const starterData = data as { starterPokemons?: unknown[] };
+
   return {
-    starterPokemons: data?.starterPokemons || null,
+    starterPokemons: starterData?.starterPokemons || null,
     isLoading: loading,
     error,
     refetch
@@ -101,9 +105,7 @@ export const useStarterPokemons = () => {
 };
 
 export const useCapturePokemon = () => {
-  const [capturePokemonMutation, { loading, error, refetch }] = useMutationMediator<CapturePokemonData>(CAPTURE_POKEMON, {
-    skip: typeof window === "undefined",
-  });
+  const [capturePokemonMutation, { loading, error }] = useMutationMediator<CapturePokemonData>(CAPTURE_POKEMON);
 
   const capturePokemon = async (pokemonID: number) => {
     return await capturePokemonMutation({
@@ -114,7 +116,6 @@ export const useCapturePokemon = () => {
   return {
     capturePokemon,
     isLoading: loading,
-    error,
-    refetch
+    error
   };
 };

@@ -1,14 +1,15 @@
 import { useMutation as useApolloMutation, MutationHookOptions, MutationTuple } from "@apollo/client/react";
+import { OperationVariables, DocumentNode } from "@apollo/client";
 import { useEffect } from "react";
 import { useAuthErrorHandler } from "./useAuthErrorHandler";
 
-interface MutationMediatorOptions<TData, TVariables> extends Omit<MutationHookOptions<TData, TVariables>, 'onError' | 'onCompleted'> {
+interface MutationMediatorOptions<TData, TVariables extends OperationVariables = OperationVariables> extends Omit<MutationHookOptions<TData, TVariables>, 'onError' | 'onCompleted'> {
   onError?: (error: unknown) => void;
   onCompleted?: (data: TData) => void;
 }
 
-export function useMutationMediator<TData = unknown, TVariables = unknown>(
-  mutation: unknown,
+export function useMutationMediator<TData = unknown, TVariables extends OperationVariables = OperationVariables>(
+  mutation: DocumentNode,
   options: MutationMediatorOptions<TData, TVariables> = {}
 ): MutationTuple<TData, TVariables> {
   const { onError, onCompleted, ...apolloOptions } = options;
@@ -21,14 +22,10 @@ export function useMutationMediator<TData = unknown, TVariables = unknown>(
 
   useEffect(() => {
     if (result.error) {
-      const isAuthError = result.error.message?.includes("Authentication required") ||
-        result.error.message?.includes("Unauthorized") ||
-        result.error.graphQLErrors?.some(err =>
-          err.message.includes("Authentication required") ||
-          err.message.includes("Unauthorized")
-        ) ||
-        result.error.networkError?.message?.includes("401") ||
-        result.error.networkError?.message?.includes("Unauthorized");
+      const errorMessage = result.error.message || '';
+      const isAuthError = errorMessage.includes("Authentication required") ||
+        errorMessage.includes("Unauthorized") ||
+        errorMessage.includes("401");
 
       if (isAuthError) {
         showAuthErrorDialog();

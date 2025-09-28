@@ -1,85 +1,173 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app) with authentication features.
+# Pokémon MVP - Frontend
 
-## Features
+> **Pós Graduação em Desenvolvimento Full Stack - PUC Rio**  
+> **MVP 02 - Desenvolvimento Back-end avançado**
 
-- **Authentication System**: Complete login/register functionality with JWT tokens
-- **Apollo GraphQL Client**: Integrated with authentication headers
-- **Next.js Middleware**: Automatic route protection and token validation
-- **User Dashboard**: Protected dashboard showing user information
-- **Cookie & LocalStorage**: Dual token storage for SSR compatibility
+Uma aplicação web moderna estilo Pokémon GO desenvolvida com Next.js, que permite aos usuários se cadastrar, capturar pokémons e gerenciar sua coleção através de uma interface intuitiva e responsiva.
 
-## Getting Started
+## Descrição do Projeto
 
-### 1. Environment Setup
+O **Pokémon MVP Frontend** é a interface de usuário de uma aplicação completa de gerenciamento de pokémons. A aplicação oferece uma experiência similar ao Pokémon GO, onde os usuários podem:
 
-Create a `.env.local` file in the root directory:
+- **Autenticação**: Cadastro e login de usuários
+- **Captura de Pokémons**: Encontrar e capturar pokémons aleatórios
+- **Dashboard Interativo**: Visualizar pokémons capturados por região
+- **Perfil do Usuário**: Gerenciar dados pessoais e estatísticas (somente visualizar por enquanto)
+- **Libertação**: Libertar pokémons da coleção
+
+A aplicação se comunica com uma API GraphQL backend que roda na porta 8000, fornecendo uma experiência de usuário fluida e moderna.
+
+## Tecnologias Utilizadas
+
+### Frontend
+- **Next.js 15.5.4** - Framework React com App Router
+- **React 19.1.0** - Biblioteca de interface de usuário
+- **TypeScript 5** - Tipagem estática
+- **Tailwind CSS 4** - Framework CSS utilitário
+- **Shadcn UI** - Componentes de interface modernos
+- **Apollo Client 4.0.5** - Cliente GraphQL
+- **Lucide React** - Ícones modernos
+- **Sonner** - Sistema de notificações toast
+
+### Ferramentas de Desenvolvimento
+- **ESLint** - Linting de código
+- **PostCSS** - Processamento CSS
+- **Docker** - Containerização
+
+## Instalação e Configuração
+
+### Pré-requisitos para instalação local
+
+Antes de começar, certifique-se de ter instalado:
+
+- **Node.js** (versão 18 ou superior)
+- **npm** ou **yarn**
+- **Docker** (opcional, para containerização)
+- **Git**
+
+### 1. Clone o Repositório
 
 ```bash
-NEXT_PUBLIC_GRAPHQL_URL=http://localhost:4000/graphql
+git clone https://github.com/davidcromianski-dev/pos-puc-mvp-02-frontend.git
+cd pos-puc-mvp-02-frontend
 ```
 
-### 2. Install Dependencies
+### 2. Instale as Dependências
 
 ```bash
 npm install
-# or
-yarn install
-# or
-pnpm install
 ```
 
-### 3. Run the Development Server
+### 3. Configure as Variáveis de Ambiente
 
+Crie um arquivo `.env.local` na raiz do projeto:
+
+```env
+NEXT_PUBLIC_GRAPHQL_URL=http://localhost:8000/graphql
+```
+
+> **Nota**: Certifique-se de que o backend GraphQL esteja rodando na porta 8000.
+
+### 4. Execute o Projeto
+
+#### Desenvolvimento
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+A aplicação estará disponível em `http://localhost:3000`
 
-### 4. Authentication Flow
+#### Build de Produção
+```bash
+npm run build
+npm run start
+```
 
-- **Unauthenticated users** are automatically redirected to `/login`
-- **Authenticated users** are redirected to `/dashboard`
-- **Protected routes** (like `/dashboard`) require valid JWT tokens
-- **Middleware** automatically validates tokens and redirects if invalid
+#### Docker
+```bash
+docker-compose up --build
+```
 
-## Authentication Features
+> **Nota**: Ao executar com Docker, as variáveis de ambiente devem ser configuradas no arquivo `docker-compose.yml`.
 
-### Login/Register Form
-- Toggle between login and registration modes
-- Form validation with error handling
-- Loading states during authentication
-- Automatic redirect after successful auth
+### 5. Verificação de Qualidade
 
-### Protected Routes
-- Middleware protects routes defined in `middleware.ts`
-- Automatic token validation using the `ME` GraphQL query
-- Redirect to login if token is invalid or missing
+```bash
+npm run lint
+```
 
-### Token Management
-- JWT tokens stored in both localStorage and cookies
-- Automatic token refresh and validation
-- Secure logout with token cleanup
+## Estrutura do Projeto
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/                   # App Router do Next.js
+│   ├── dashboard/         # Página principal
+│   ├── login/            # Autenticação
+│   ├── user/             # Perfil do usuário
+│   └── layout.tsx        # Layout principal
+├── components/           # Componentes reutilizáveis
+│   ├── ui/              # Componentes base (Shadcn UI)
+│   └── ...              # Componentes específicos
+├── contexts/            # Contextos React
+├── features/            # Funcionalidades organizadas
+│   ├── auth/           # Autenticação
+│   ├── pokemon/        # Gerenciamento de pokémons
+│   └── user/           # Dados do usuário
+├── graphql/            # Configuração GraphQL
+│   ├── client.ts       # Cliente Apollo
+│   └── domains/        # Queries, mutations e tipos
+├── hooks/              # Hooks customizados
+└── lib/                # Utilitários
+```
 
-## Learn More
+## Funcionalidades
 
-To learn more about Next.js, take a look at the following resources:
+### Sistema de Autenticação
+- Cadastro de novos usuários
+- Login com validação
+- Gerenciamento de sessão
+- Proteção de rotas
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Gerenciamento de Pokémons
+- **Captura**: Encontrar pokémons aleatórios por região (por enquanto, somente a região inical de Kanto)
+- **Visualização**: Dashboard com pokémons por região
+- **Seleção**: Escolher pokemon ativo
+- **Libertação**: Remover pokémons da coleção
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Interface do Usuário
+- **Dashboard**: Visão geral da coleção
+- **Perfil**: Dados pessoais e estatísticas
+- **Responsivo**: Funciona em desktop e mobile
+- **Notificações**: Feedback visual para ações
 
-## Deploy on Vercel
+## Páginas Disponíveis
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Rota | Descrição | Acesso |
+|------|-----------|--------|
+| `/` | Página inicial com redirecionamentos | Público |
+| `/login` | Login e cadastro de usuários | Público |
+| `/dashboard` | Página principal da aplicação | Autenticado |
+| `/user` | Dados e perfil do usuário | Autenticado |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Scripts Disponíveis
+
+```bash
+npm run dev          # Inicia servidor de desenvolvimento
+npm run build        # Cria build de produção
+npm run start        # Inicia servidor de produção
+npm run lint         # Executa linter ESLint
+```
+
+## Fluxogramas
+
+### Fluxograma de Autenticação
+
+![Fluxograma de Autenticação](./docs/assets/fluxograma-autenticacao.png)
+
+### Fluxograma de Captura de Pokémons
+
+![Fluxograma de Captura de Pokémons](./docs/assets/fluxograma-captura-pokemons.png)
+
+### Fluxograma de Libertação de Pokémons
+
+![Fluxograma de Libertação de Pokémons](./docs/assets/fluxograma-libertacao-pokemons.png)

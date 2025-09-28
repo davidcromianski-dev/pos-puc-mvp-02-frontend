@@ -11,14 +11,12 @@ import {
 
 interface ReleasePokemonDialogProps {
   showConfirmation: string | null;
-  releasingPokemon: boolean;
   onCancel: () => void;
   onConfirm: (pokemonId: string) => void;
 }
 
 export const ReleasePokemonDialog = ({
   showConfirmation,
-  releasingPokemon,
   onCancel,
   onConfirm,
 }: ReleasePokemonDialogProps) => {
@@ -34,22 +32,14 @@ export const ReleasePokemonDialog = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={releasingPokemon}>
+          <AlertDialogCancel>
             Cancelar
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={() => onConfirm(showConfirmation)}
-            disabled={releasingPokemon}
             className="flex items-center gap-2 bg-red-700"
           >
-            {releasingPokemon ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Abandonando...
-              </>
-            ) : (
-              "Confirmar"
-            )}
+            Confirmar
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

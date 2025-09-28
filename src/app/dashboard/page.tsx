@@ -15,7 +15,7 @@ import { useState, useEffect } from "react";
 import { Pokemon, RandomPokemon } from "../../graphql/domains/pokemon/types";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
-import { Binoculars, DoorOpen } from "lucide-react";
+import { Binoculars, DoorOpen, BadgeQuestionMark } from "lucide-react";
 import { SelectPokemonDialog } from "./dialogs/SelectPokemonDialog";
 import { ReleasePokemonDialog } from "./dialogs/ReleasePokemonDialog";
 import { CapturePokemonDialog } from "./dialogs/CapturePokemonDialog";
@@ -55,7 +55,6 @@ function DashboardContent() {
     handleReleasePokemonClick,
     cancelReleasePokemon,
     confirmReleasePokemon,
-    releasingPokemon,
   } = useReleasePokemon();
   const {
     capturePokemon,
@@ -67,22 +66,16 @@ function DashboardContent() {
   const [showCaptureDialog, setShowCaptureDialog] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
 
-
   useEffect(() => {
-    if (!myPokemons || myPokemons.length === 0 || !user?.currentRegion) {
-      setCurrentRegionPokemons([]);
-      return;
+    if (user && myPokemons?.length > 0) {
+      const pokemonsByRegion = myPokemons.find((data: unknown) => {
+        const regionData = data as { region?: string };
+        return regionData?.region === user?.currentRegion;
+      });
+      const regionPokemon = pokemonsByRegion as { pokemon?: Pokemon[] };
+      setCurrentRegionPokemons(regionPokemon?.pokemon ?? []);
     }
-
-    const regionData = myPokemons.find((data) => data.region === user.currentRegion);
-    const pokemons = regionData?.pokemon ?? [];
-
-    setCurrentRegionPokemons((prev) => {
-      const prevIds = prev.map(p => p.id).join(",");
-      const newIds = pokemons.map(p => p.id).join(",");
-      return prevIds !== newIds ? pokemons : prev;
-    });
-  }, [myPokemons, user?.currentRegion]);
+  }, [myPokemons, user]);
 
   const handlePokemonSelectionClick = (pokemonId: string) => {
     handlePokemonSelection(pokemonId, currentPokemon?.id);
@@ -108,6 +101,8 @@ function DashboardContent() {
         success("Pokémon foi abandonado com sucesso!");
       }
 
+      setCurrentRegionPokemons([]);
+
       await Promise.all([refetchCurrentPokemon(), refetchMyPokemons()]);
     } catch (err) {
       console.error("Error releasing Pokemon:", err);
@@ -117,17 +112,18 @@ function DashboardContent() {
 
   const handleCapturePokemon = async () => {
     try {
-      const pokemon = await getRandomPokemon();
+      const pokemon = await getRandomPokemon() as RandomPokemon;
       setRandomPokemon(pokemon);
       setShowCaptureDialog(true);
-    } catch (error) {
-      console.error("Error getting random pokemon:", error);
+    } catch (err: unknown) {
+      console.error("Error getting random pokemon:", err);
       error("Erro ao buscar Pokémon selvagem");
     }
   };
 
   const handleConfirmCapture = async () => {
-    if (!randomPokemon?.pokemonId) {
+    const { pokemonId, name } = randomPokemon as RandomPokemon;
+    if (!pokemonId) {
       error("Pokémon inválido para captura");
       return;
     }
@@ -135,18 +131,17 @@ function DashboardContent() {
     setIsCapturing(true);
 
     try {
-      const { data } = await capturePokemon(randomPokemon.pokemonId);
-
+      const { data } = await capturePokemon(pokemonId);
       if (data?.capturePokemon) {
-        success(`${randomPokemon.name} foi capturado com sucesso!`);
+        success(`${name} foi capturado com sucesso!`);
         setShowCaptureDialog(false);
         setRandomPokemon(null);
 
         await Promise.all([refetchCurrentPokemon(), refetchMyPokemons()]);
       } else {
-        warning(`${randomPokemon.name} escapou! Tente novamente.`);
+        warning(`${name} escapou! Tente novamente.`);
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error capturing pokemon:", err);
       error("Erro ao capturar Pokémon");
     } finally {
@@ -189,14 +184,16 @@ function DashboardContent() {
                 {pokemonSpriteUrl && (
                   <Image
                     src={pokemonSpriteUrl}
-                    alt={pokemonName}
+                    alt={pokemonName || "Pokémon"}
                     width={250}
                     height={250}
                     className="object-contain cursor-pointer"
                     style={{ width: "250px", height: "250px" }}
                     onClick={() => {
-                      const crie = new Audio(pokemonCrieUrl);
-                      crie.play();
+                      if (pokemonCrieUrl) {
+                        const crie = new Audio(pokemonCrieUrl);
+                        crie.play();
+                      }
                     }}
                   />
                 )}
@@ -253,19 +250,22 @@ function DashboardContent() {
                 {currentRegionPokemons.map((pokemon) => (
                   <div
                     key={pokemon.id}
-                    className={`relative w-15 h-15 rounded-full border-4 cursor-pointer transition-all duration-200 hover:scale-110 ${currentPokemon?.id === pokemon.id
+                    className={`relative flex items-center justify-center w-15 h-15 rounded-full border-4 cursor-pointer transition-all duration-200 hover:scale-110 ${currentPokemon?.id === pokemon.id
                       ? 'border-yellow-500 bg-yellow-100 shadow-lg'
                       : 'border-gray-300 bg-white hover:border-blue-400 hover:shadow-md'
                       }`}
                     onClick={() => handlePokemonSelectionClick(pokemon.id)}
                   >
-                    <Image
-                      src={pokemon.spriteUrl}
-                      alt={pokemon.name}
-                      width={50}
-                      height={50}
-                      className="w-full h-full object-contain p-2"
-                    />
+                    {pokemon.spriteUrl ? (
+                      <Image
+                        src={pokemon.spriteUrl}
+                        alt={pokemon.name}
+                        width={50}
+                        height={50}
+                        className="w-full h-full object-contain p-2"
+                      />
+                    ) : (<BadgeQuestionMark className="h-9 w-9 text-gray-700" />)}
+
                     {currentPokemon?.id === pokemon.id && (
                       <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs font-bold">★</span>
@@ -287,7 +287,6 @@ function DashboardContent() {
 
         <ReleasePokemonDialog
           showConfirmation={showReleaseConfirmation}
-          releasingPokemon={releasingPokemon}
           onCancel={cancelReleasePokemon}
           onConfirm={handleConfirmReleasePokemon}
         />

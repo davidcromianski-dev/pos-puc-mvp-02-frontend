@@ -17,7 +17,7 @@ function HomeContent() {
         return;
       }
 
-      if (!isLoading && !isAuthenticated) {
+      if (!isAuthenticated) {
         router.push("/login");
       }
     }, 100);

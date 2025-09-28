@@ -13,8 +13,8 @@ interface AuthContextType {
   logout: () => void;
   loginLoading: boolean;
   registerLoading: boolean;
-  loginError: unknown;
-  registerError: unknown;
+  loginError: Error | undefined;
+  registerError: Error | undefined;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

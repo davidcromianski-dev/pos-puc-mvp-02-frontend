@@ -5,7 +5,7 @@ export interface PokemonType {
 
 export interface Pokemon {
     id: string;
-    pokemonId: string;
+    pokemonId: number;
     name: string;
     nickname?: string;
     level: number;
@@ -90,7 +90,7 @@ export interface StarterPokemon {
 }
 
 export interface RandomPokemon {
-    pokemonId: string;
+    pokemonId: number;
     name: string;
     hp: number;
     types: PokemonType[];

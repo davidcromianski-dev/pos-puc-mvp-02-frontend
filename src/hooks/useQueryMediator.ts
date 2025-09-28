@@ -1,34 +1,38 @@
-import { useQuery as useApolloQuery, QueryHookOptions, QueryResult } from "@apollo/client/react";
+import { useQuery as useApolloQuery, QueryResult } from "@apollo/client/react";
+import { DocumentNode } from "@apollo/client";
 import { useEffect } from "react";
 import { useAuthErrorHandler } from "./useAuthErrorHandler";
 
-interface QueryMediatorOptions<TData, TVariables> extends Omit<QueryHookOptions<TData, TVariables>, 'onError' | 'onCompleted'> {
+interface QueryMediatorOptions {
   onError?: (error: unknown) => void;
-  onCompleted?: (data: TData) => void;
+  onCompleted?: (data: unknown) => void;
+  skip?: boolean;
+  fetchPolicy?: "cache-first" | "cache-and-network" | "network-only" | "cache-only" | "no-cache" | "standby";
+  notifyOnNetworkStatusChange?: boolean;
+  variables?: Record<string, unknown>;
 }
 
-export function useQueryMediator<TData = unknown, TVariables = unknown>(
-  query: unknown,
-  options: QueryMediatorOptions<TData, TVariables> = {}
-): QueryResult<TData, TVariables> {
-  const { onError, onCompleted, ...apolloOptions } = options;
+export function useQueryMediator(
+  query: DocumentNode,
+  options: QueryMediatorOptions = {}
+): QueryResult<unknown, Record<string, unknown>> {
+  const { onError, onCompleted, skip, fetchPolicy, notifyOnNetworkStatusChange, variables } = options;
   const { showAuthErrorDialog } = useAuthErrorHandler();
 
-  const result = useApolloQuery<TData, TVariables>(query, {
-    ...apolloOptions,
+  const result = useApolloQuery(query, {
+    skip,
+    fetchPolicy,
+    notifyOnNetworkStatusChange,
+    variables,
     errorPolicy: "all",
   });
 
   useEffect(() => {
     if (result.error) {
-      const isAuthError = result.error.message?.includes("Authentication required") ||
-        result.error.message?.includes("Unauthorized") ||
-        result.error.graphQLErrors?.some(err =>
-          err.message.includes("Authentication required") ||
-          err.message.includes("Unauthorized")
-        ) ||
-        result.error.networkError?.message?.includes("401") ||
-        result.error.networkError?.message?.includes("Unauthorized");
+      const errorMessage = result.error.message || '';
+      const isAuthError = errorMessage.includes("Authentication required") ||
+        errorMessage.includes("Unauthorized") ||
+        errorMessage.includes("401");
 
       if (isAuthError) {
         showAuthErrorDialog();

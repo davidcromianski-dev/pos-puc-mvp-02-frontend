@@ -195,7 +195,7 @@ export default function AuthForm() {
 
             {authError && (
               <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-                {authError.message || "Autenticação falhou. Por favor, tente novamente."}
+                {"Autenticação falhou. Por favor, tente novamente."}
               </div>
             )}
 
