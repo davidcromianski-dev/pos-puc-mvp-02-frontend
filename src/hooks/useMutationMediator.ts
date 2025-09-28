@@ -21,8 +21,6 @@ export function useMutationMediator<TData = unknown, TVariables = unknown>(
 
   useEffect(() => {
     if (result.error) {
-      console.error("Mutation error:", result.error);
-
       const isAuthError = result.error.message?.includes("Authentication required") ||
         result.error.message?.includes("Unauthorized") ||
         result.error.graphQLErrors?.some(err =>

@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ApolloWrapper } from "../lib/apollo-wrapper";
 import { AuthErrorHandler } from "../components/AuthErrorHandler";
+import { ToastProvider } from "../contexts/ToastContext";
+import { ToastContainer } from "../components/Toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,8 +33,11 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <ApolloWrapper>
-          {children}
-          <AuthErrorHandler />
+          <ToastProvider>
+            {children}
+            <AuthErrorHandler />
+            <ToastContainer />
+          </ToastProvider>
         </ApolloWrapper>
       </body>
     </html>

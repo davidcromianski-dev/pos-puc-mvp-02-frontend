@@ -7,15 +7,12 @@ const httpLink = new HttpLink({
 });
 
 const authLink = new SetContextLink(({ headers }) => {
-  // get the authentication token from cookies or local storage
   let token = "";
-  
+
   if (typeof window !== "undefined") {
-    // Client-side: try localStorage first, then cookies
     try {
       token = localStorage.getItem("token") || "";
-      
-      // If not in localStorage, try to get from cookies
+
       if (!token) {
         const cookies = document.cookie.split(';');
         const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('token='));
@@ -24,12 +21,10 @@ const authLink = new SetContextLink(({ headers }) => {
         }
       }
     } catch (error) {
-      // Handle cases where localStorage might not be available
       console.warn("Error accessing localStorage:", error);
     }
   }
-  
-  // return the headers to the context so httpLink can read them
+
   return {
     headers: {
       ...headers,
@@ -38,17 +33,14 @@ const authLink = new SetContextLink(({ headers }) => {
   };
 });
 
-// Error link to handle authentication errors
-const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) => {
+const errorLink = onError(({ graphQLErrors, networkError }) => {
   if (graphQLErrors) {
     graphQLErrors.forEach(({ message, locations, path }) => {
       console.error(
         `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`
       );
-      
-      // Check if the error is authentication related
+
       if (message.includes("Authentication required") || message.includes("Unauthorized")) {
-        // Dispatch a custom event to trigger the auth error dialog
         if (typeof window !== "undefined") {
           window.dispatchEvent(new CustomEvent("auth-error"));
         }
@@ -58,8 +50,7 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 
   if (networkError) {
     console.error(`[Network error]: ${networkError}`);
-    
-    // Check if the network error is authentication related
+
     if (networkError.message.includes("401") || networkError.message.includes("Unauthorized")) {
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("auth-error"));
@@ -70,7 +61,29 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 
 const client = new ApolloClient({
   link: from([errorLink, authLink, httpLink]),
-  cache: new InMemoryCache(),
+  cache: new InMemoryCache({
+    typePolicies: {
+      Query: {
+        fields: {
+          myCurrentPokemon: {
+            merge: false,
+          },
+          myPokemons: {
+            merge: false,
+          },
+        },
+      },
+    },
+  }),
+  defaultOptions: {
+    watchQuery: {
+      errorPolicy: 'all',
+      notifyOnNetworkStatusChange: true,
+    },
+    query: {
+      errorPolicy: 'all',
+    },
+  },
 });
 
 export default client;

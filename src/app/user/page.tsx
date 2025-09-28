@@ -5,7 +5,6 @@ import { useCurrentPokemon } from "../../features/pokemon/hooks";
 import { AuthGuard } from "../../components/AuthGuard";
 import { Header } from "../../components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
-import { ClientOnly } from "../../lib/client-only";
 import {
     Cat,
     User,
@@ -21,10 +20,10 @@ import Image from "next/image";
 
 function UserContent() {
     const { user, isLoading } = useAuthContext();
-    const { 
-        currentPokemon, 
-        pokemonName, 
-        pokemonNickname, 
+    const {
+        currentPokemon,
+        pokemonName,
+        pokemonNickname,
         pokemonLevel,
         pokemonHp,
         pokemonExperience,
@@ -32,7 +31,7 @@ function UserContent() {
         pokemonHappiness,
         pokemonTypes,
         pokemonSpriteUrl,
-        isLoading: pokemonLoading 
+        isLoading: pokemonLoading
     } = useCurrentPokemon();
 
     if (isLoading || pokemonLoading) {
@@ -132,9 +131,9 @@ function UserContent() {
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-3">
                                         {pokemonSpriteUrl && (
-                                            <Image 
-                                                src={pokemonSpriteUrl} 
-                                                alt={pokemonName || "Pokemon"} 
+                                            <Image
+                                                src={pokemonSpriteUrl}
+                                                alt={pokemonName || "Pokemon"}
                                                 width={64}
                                                 height={64}
                                                 className="object-contain"
@@ -146,7 +145,7 @@ function UserContent() {
                                             </h3>
                                             <div className="flex gap-1">
                                                 {pokemonTypes.map((type, index) => (
-                                                    <span 
+                                                    <span
                                                         key={index}
                                                         className="px-2 py-1 bg-gray-200 text-xs rounded"
                                                     >
@@ -196,16 +195,7 @@ function UserContent() {
 export default function UserPage() {
     return (
         <AuthGuard>
-            <ClientOnly fallback={
-                <div className="min-h-screen flex items-center justify-center">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-                        <p className="mt-4 text-gray-600">Carregando...</p>
-                    </div>
-                </div>
-            }>
-                <UserContent />
-            </ClientOnly>
+            <UserContent />
         </AuthGuard>
     );
 }

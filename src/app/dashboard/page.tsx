@@ -10,19 +10,22 @@ import {
 import { useSelectPokemon, useReleasePokemon } from "../../features/user/hooks";
 import { AuthGuard } from "../../components/AuthGuard";
 import { Header } from "../../components/Header";
-import { ClientOnly } from "../../lib/client-only";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Pokemon } from "../../graphql/domains/pokemon/types";
+import { Pokemon, RandomPokemon } from "../../graphql/domains/pokemon/types";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Binoculars, DoorOpen } from "lucide-react";
 import { SelectPokemonDialog } from "./dialogs/SelectPokemonDialog";
 import { ReleasePokemonDialog } from "./dialogs/ReleasePokemonDialog";
 import { CapturePokemonDialog } from "./dialogs/CapturePokemonDialog";
+import { useToast } from "../../contexts/ToastContext";
+import { useAuthState } from "../../hooks/useAuthState";
 
 function DashboardContent() {
   const { user } = useAuthContext();
+  const { success, error, warning } = useToast();
+  useAuthState();
   const {
     pokemonName,
     pokemonNickname,
@@ -37,9 +40,9 @@ function DashboardContent() {
     pokemonHappiness,
     pokemonHunger,
     pokemonCleanliness,
-    refetch: refetchCurrentPokemon
+    refetch: refetchCurrentPokemon,
   } = useCurrentPokemon();
-  const { myPokemons, isLoading: pokemonsLoading } = useMyPokemons();
+  const { myPokemons, refetch: refetchMyPokemons } = useMyPokemons();
   const {
     showConfirmation: showSelectConfirmation,
     selectingPokemon,
@@ -56,24 +59,30 @@ function DashboardContent() {
   } = useReleasePokemon();
   const {
     capturePokemon,
-    isLoading: capturePokemonLoading,
   } = useCapturePokemon();
   const { getRandomPokemon } = useRandomPokemon();
   const [randomPokemon, setRandomPokemon] = useState<RandomPokemon | null>(null);
 
   const [currentRegionPokemons, setCurrentRegionPokemons] = useState<Pokemon[]>([]);
   const [showCaptureDialog, setShowCaptureDialog] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+
 
   useEffect(() => {
-    if (myPokemons?.length > 0) {
-      const filteredRegion = myPokemons.find((data) => data.region === user?.currentRegion);
-      if (filteredRegion?.pokemon) {
-        setTimeout(() => {
-          setCurrentRegionPokemons(filteredRegion?.pokemon);
-        }, 500);
-      }
+    if (!myPokemons || myPokemons.length === 0 || !user?.currentRegion) {
+      setCurrentRegionPokemons([]);
+      return;
     }
-  }, [myPokemons, user, pokemonsLoading]);
+
+    const regionData = myPokemons.find((data) => data.region === user.currentRegion);
+    const pokemons = regionData?.pokemon ?? [];
+
+    setCurrentRegionPokemons((prev) => {
+      const prevIds = prev.map(p => p.id).join(",");
+      const newIds = pokemons.map(p => p.id).join(",");
+      return prevIds !== newIds ? pokemons : prev;
+    });
+  }, [myPokemons, user?.currentRegion]);
 
   const handlePokemonSelectionClick = (pokemonId: string) => {
     handlePokemonSelection(pokemonId, currentPokemon?.id);
@@ -88,36 +97,75 @@ function DashboardContent() {
   };
 
   const handleConfirmReleasePokemon = async (pokemonId: string) => {
-    await confirmReleasePokemon(pokemonId, refetchCurrentPokemon);
-    setCurrentPokemon(null);
+    try {
+      const releasedPokemon = currentRegionPokemons.find(pokemon => pokemon.id === pokemonId);
+
+      await confirmReleasePokemon(pokemonId, refetchCurrentPokemon);
+
+      if (releasedPokemon) {
+        success(`${releasedPokemon.name} foi abandonado com sucesso!`);
+      } else {
+        success("Pokémon foi abandonado com sucesso!");
+      }
+
+      await Promise.all([refetchCurrentPokemon(), refetchMyPokemons()]);
+    } catch (err) {
+      console.error("Error releasing Pokemon:", err);
+      error("Erro ao abandonar Pokémon");
+    }
   };
 
   const handleCapturePokemon = async () => {
-    const pokemon = await getRandomPokemon();
-    setRandomPokemon(pokemon);
-    setShowCaptureDialog(true);
+    try {
+      const pokemon = await getRandomPokemon();
+      setRandomPokemon(pokemon);
+      setShowCaptureDialog(true);
+    } catch (error) {
+      console.error("Error getting random pokemon:", error);
+      error("Erro ao buscar Pokémon selvagem");
+    }
   };
 
   const handleConfirmCapture = async () => {
+    if (!randomPokemon?.pokemonId) {
+      error("Pokémon inválido para captura");
+      return;
+    }
+
+    setIsCapturing(true);
+
     try {
-      await capturePokemon(randomPokemon?.pokemonId);
-      setShowCaptureDialog(false);
-      refetchCurrentPokemon();
-    } catch (error) {
-      console.error("Error capturing pokemon:", error);
+      const { data } = await capturePokemon(randomPokemon.pokemonId);
+
+      if (data?.capturePokemon) {
+        success(`${randomPokemon.name} foi capturado com sucesso!`);
+        setShowCaptureDialog(false);
+        setRandomPokemon(null);
+
+        await Promise.all([refetchCurrentPokemon(), refetchMyPokemons()]);
+      } else {
+        warning(`${randomPokemon.name} escapou! Tente novamente.`);
+      }
+    } catch (err) {
+      console.error("Error capturing pokemon:", err);
+      error("Erro ao capturar Pokémon");
+    } finally {
+      setIsCapturing(false);
     }
   };
 
   const handleCancelCapture = () => {
     setShowCaptureDialog(false);
+    setRandomPokemon(null);
+    setIsCapturing(false);
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex">
+    <div className="min-h-screen max-h-screen overflow-hidden bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex">
       <div className="max-w-4xl mx-auto flex-1 flex flex-col">
         <Header showDashboardButton={false} />
 
-        <div className="flex items-center justify-start flex-1 gap-4 flex-col pt-6">
+        <div className="flex items-center justify-start flex-1 gap-4 flex-col">
           {currentPokemon ? (
             <>
               <div className="flex flex-col items-center justify-center">
@@ -162,7 +210,7 @@ function DashboardContent() {
             </div>
           )}
 
-          <div className="flex items-center justify-center flex-col gap-4 mt-8">
+          <div className="flex items-center justify-center gap-2 flex-col sm:flex-row">
             {currentPokemon && (
               <Button
                 variant="outline"
@@ -248,7 +296,7 @@ function DashboardContent() {
           isOpen={showCaptureDialog}
           onClose={handleCancelCapture}
           onConfirm={handleConfirmCapture}
-          isCapturing={capturePokemonLoading}
+          isCapturing={isCapturing}
           randomPokemon={randomPokemon}
         />
 
@@ -260,16 +308,7 @@ function DashboardContent() {
 export default function DashboardPage() {
   return (
     <AuthGuard>
-      <ClientOnly fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Carregando...</p>
-          </div>
-        </div>
-      }>
-        <DashboardContent />
-      </ClientOnly>
+      <DashboardContent />
     </AuthGuard>
   );
 }

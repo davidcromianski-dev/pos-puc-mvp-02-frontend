@@ -13,9 +13,9 @@ export default function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    username: "ash",
-    password: "pikachu",
-    email: "ash@mail.com"
+    username: "", //"ash",
+    password: "", //"pikachu",
+    email: "", //"ash@mail.com"
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 

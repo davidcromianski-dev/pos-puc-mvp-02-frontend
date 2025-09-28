@@ -4,7 +4,6 @@ export function useAuthErrorHandler() {
   const { showAuthError, setShowAuthError } = useAuthError();
 
   const showAuthErrorDialog = () => {
-    console.log("Showing auth error dialog");
     setShowAuthError(true);
   };
 

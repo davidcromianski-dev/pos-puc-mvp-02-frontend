@@ -15,6 +15,8 @@ import type {
 export const useCurrentPokemon = () => {
   const { data, loading, error, refetch } = useQueryMediator<MyCurrentPokemonData>(MY_CURRENT_POKEMON, {
     skip: typeof window === "undefined",
+    fetchPolicy: "cache-and-network",
+    notifyOnNetworkStatusChange: true,
   });
 
   const currentPokemon = data?.myCurrentPokemon as Pokemon;
@@ -44,7 +46,18 @@ export const useCurrentPokemon = () => {
 export const useMyPokemons = () => {
   const { data, loading, error, refetch } = useQueryMediator<MyPokemonsData>(MY_POKEMONS, {
     skip: typeof window === "undefined",
+    fetchPolicy: "cache-and-network",
+    notifyOnNetworkStatusChange: true,
   });
+
+  if (!data?.myPokemons) return {
+    myPokemons: [],
+    totalPokemons: 0,
+    isLoading: loading,
+    error,
+    refetch
+  };
+
   const totalPokemons = data?.myPokemons.reduce((acc, curr) => acc + curr.count, 0);
 
   return {

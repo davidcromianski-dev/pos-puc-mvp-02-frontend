@@ -1,35 +1,41 @@
 import { useMutationMediator } from "../../hooks/useMutationMediator";
-import { useQuery } from "@apollo/client/react";
+import { useQuery, useApolloClient } from "@apollo/client/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { LOGIN, REGISTER } from "../../graphql/domains/auth/mutations";
 import { ME } from "../../graphql/domains/user/queries";
-import type { 
-  LoginVariables, 
-  RegisterVariables, 
-  LoginData, 
-  RegisterData 
+import type {
+  LoginVariables,
+  RegisterVariables,
+  LoginData,
+  RegisterData
 } from "../../graphql/domains/auth/types";
 import type { User } from "../../graphql/domains/user/types";
 import type { MeData } from "../../graphql/domains/user/types";
 
 export const useAuth = () => {
   const router = useRouter();
+  const client = useApolloClient();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
 
-  const { data } = useQuery<MeData>(ME, {
+  const { data, loading, refetch: refetchMe } = useQuery<MeData>(ME, {
     skip: typeof window === "undefined",
+    fetchPolicy: "cache-and-network",
   });
 
   useEffect(() => {
-    if (user === null && data?.me) {
+    if (data?.me) {
       setUser(data.me);
       setIsAuthenticated(true);
       setIsLoading(false);
+    } else if (!data && !loading) {
+      setUser(null);
+      setIsAuthenticated(false);
+      setIsLoading(false);
     }
-  }, [user, setUser, data]);
+  }, [data, loading]);
 
   const setToken = (token: string) => {
     localStorage.setItem("token", token);
@@ -58,12 +64,16 @@ export const useAuth = () => {
       const result = await loginMutation({
         variables: { username, password }
       });
-      
+
       if (result.data?.login?.accessToken && result.data?.login?.user) {
         setToken(result.data.login.accessToken);
         setUser(result.data.login.user);
         setIsAuthenticated(true);
         setIsLoading(false);
+
+        await client.resetStore();
+        await refetchMe();
+
         router.push("/dashboard");
       }
     } catch (error) {
@@ -76,12 +86,16 @@ export const useAuth = () => {
       const result = await registerMutation({
         variables: { username, password, email }
       });
-      
+
       if (result.data?.register?.accessToken && result.data?.register?.user) {
         setToken(result.data.register.accessToken);
         setUser(result.data.register.user);
         setIsAuthenticated(true);
         setIsLoading(false);
+
+        await client.resetStore();
+        await refetchMe();
+
         router.push("/dashboard");
       }
     } catch (error) {
@@ -89,11 +103,14 @@ export const useAuth = () => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     removeToken();
     setUser(null);
     setIsAuthenticated(false);
-    router.push("/login");
+
+    setTimeout(() => {
+      router.push("/login");
+    }, 100);
   };
 
   return {

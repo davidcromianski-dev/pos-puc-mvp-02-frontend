@@ -9,17 +9,20 @@ import {
   AlertDialogTitle,
 } from "../../../components/ui/alert-dialog";
 import Image from "next/image";
+import { RandomPokemon } from "../../../graphql/domains/pokemon/types";
 
 interface CapturePokemonDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
   isCapturing?: boolean;
+  randomPokemon?: RandomPokemon | null;
 }
 
 export const CapturePokemonDialog = ({
   isOpen,
   onConfirm,
+  onClose,
   isCapturing = false,
   randomPokemon,
 }: CapturePokemonDialogProps) => {
@@ -29,19 +32,29 @@ export const CapturePokemonDialog = ({
     <AlertDialog open={isOpen}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle className="capitalize">Você encontrou um(a) {randomPokemon?.name} selvagem!</AlertDialogTitle>
+          <AlertDialogTitle className="capitalize">
+            {randomPokemon?.name ? `Você encontrou um(a) ${randomPokemon.name} selvagem!` : "Pokémon selvagem encontrado!"}
+          </AlertDialogTitle>
           <AlertDialogDescription className="flex items-center justify-center">
-            <Image src={randomPokemon?.spriteUrl} alt={randomPokemon?.name} width={200} height={200}
-              style={{ height: "200px", width: "200px" }} />
+            {randomPokemon?.spriteUrl && (
+              <Image
+                src={randomPokemon.spriteUrl}
+                alt={randomPokemon.name || "Pokémon selvagem"}
+                width={200}
+                height={200}
+                style={{ height: "200px", width: "200px" }}
+              />
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isCapturing}>
+          <AlertDialogCancel
+            onClick={onClose}
+          >
             Desistir
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={onConfirm}
-            disabled={isCapturing}
             className="flex items-center gap-2"
           >
             {isCapturing ? (
