@@ -149,6 +149,13 @@ src/
 | `/dashboard` | Página principal da aplicação | Autenticado |
 | `/user` | Dados e perfil do usuário | Autenticado |
 
+## Usuário padrão (admin)
+
+- Usuário: admin
+- Senha: admin
+
+> **Nota**: Você também pode criar seu próprio usuário através da tela de login.
+
 ## Scripts Disponíveis
 
 ```bash

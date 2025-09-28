@@ -189,6 +189,7 @@ function DashboardContent() {
                     height={250}
                     className="object-contain cursor-pointer"
                     style={{ width: "250px", height: "250px" }}
+                    unoptimized
                     onClick={() => {
                       if (pokemonCrieUrl) {
                         const crie = new Audio(pokemonCrieUrl);
@@ -262,6 +263,7 @@ function DashboardContent() {
                         alt={pokemon.name}
                         width={50}
                         height={50}
+                        unoptimized
                         className="w-full h-full object-contain p-2"
                       />
                     ) : (<BadgeQuestionMark className="h-9 w-9 text-gray-700" />)}

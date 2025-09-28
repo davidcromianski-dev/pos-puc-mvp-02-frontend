@@ -8,8 +8,6 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_GRAPHQL_URL=http://localhost:8000/graphql
-    volumes:
-      - .:/app
 
 networks:
   pos-puc-mvp-02-network:

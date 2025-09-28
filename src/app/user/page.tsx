@@ -136,6 +136,7 @@ function UserContent() {
                                                 alt={pokemonName || "Pokemon"}
                                                 width={64}
                                                 height={64}
+                                                unoptimized 
                                                 className="object-contain"
                                             />
                                         )}

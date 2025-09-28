@@ -42,6 +42,7 @@ export const CapturePokemonDialog = ({
                 alt={randomPokemon.name || "Pokémon selvagem"}
                 width={200}
                 height={200}
+                unoptimized
                 style={{ height: "200px", width: "200px" }}
               />
             )}
