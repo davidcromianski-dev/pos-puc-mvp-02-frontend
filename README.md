@@ -27,7 +27,6 @@ A aplicação se comunica com uma API GraphQL backend que roda na porta 8000, fo
 - **Shadcn UI** - Componentes de interface modernos
 - **Apollo Client 4.0.5** - Cliente GraphQL
 - **Lucide React** - Ícones modernos
-- **Sonner** - Sistema de notificações toast
 
 ### Ferramentas de Desenvolvimento
 - **ESLint** - Linting de código
