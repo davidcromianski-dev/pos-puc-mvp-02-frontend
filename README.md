@@ -169,12 +169,12 @@ npm run lint         # Executa linter ESLint
 
 ### Fluxograma de Autenticação
 
-![Fluxograma de Autenticação](./docs/assets/fluxograma-autenticacao.png)
+![Fluxograma de Autenticação](./docs/assets/fluxograma-autenticacao.jpg)
 
 ### Fluxograma de Captura de Pokémons
 
-![Fluxograma de Captura de Pokémons](./docs/assets/fluxograma-captura-pokemons.png)
+![Fluxograma de Captura de Pokémons](./docs/assets/fluxograma-captura-pokemons.jpg)
 
 ### Fluxograma de Libertação de Pokémons
 
-![Fluxograma de Libertação de Pokémons](./docs/assets/fluxograma-libertacao-pokemons.png)
+![Fluxograma de Libertação de Pokémons](./docs/assets/fluxograma-libertacao-pokemons.jpg)
